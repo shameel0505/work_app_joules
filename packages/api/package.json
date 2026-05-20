@@ -1,0 +1,36 @@
+{
+  "name": "@aidea/api",
+  "version": "1.0.0",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch & node --watch dist/main.js",
+    "start": "node dist/main.js",
+    "lint": "eslint \"src/**/*.ts\"",
+    "test": "jest --passWithNoTests",
+    "typecheck": "tsc --noEmit",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev"
+  },
+  "dependencies": {
+    "@aidea/shared-types": "workspace:*",
+    "@fastify/cookie": "9.3.1",
+    "@fastify/cors": "9.0.1",
+    "@fastify/jwt": "8.0.1",
+    "@fastify/multipart": "8.2.0",
+    "@prisma/client": "5.13.0",
+    "axios": "1.6.8",
+    "bullmq": "5.7.8",
+    "fastify": "4.26.2",
+    "ioredis": "5.4.1",
+    "nodemailer": "6.9.13",
+    "socket.io": "4.7.5",
+    "zod": "3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "20.12.7",
+    "@types/nodemailer": "6.4.14",
+    "prisma": "5.13.0",
+    "typescript": "5.4.5"
+  }
+}
