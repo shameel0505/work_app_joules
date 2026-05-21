@@ -4,6 +4,8 @@ import cookie from '@fastify/cookie';
 import jwt from '@fastify/jwt';
 import multipart from '@fastify/multipart';
 
+import { authRoutes } from "./modules/auth/auth.routes";
+
 export const buildApp = (opts: FastifyServerOptions = {}): FastifyInstance => {
   const app = fastify(opts);
 
@@ -20,6 +22,8 @@ export const buildApp = (opts: FastifyServerOptions = {}): FastifyInstance => {
   });
   
   app.register(multipart);
+
+  app.register(authRoutes, { prefix: '/api/v1/auth' });
 
   // Health check route
   app.get('/health', async () => {
