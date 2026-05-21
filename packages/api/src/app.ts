@@ -5,6 +5,8 @@ import jwt from '@fastify/jwt';
 import multipart from '@fastify/multipart';
 
 import { authRoutes } from "./modules/auth/auth.routes";
+import { usersRoutes } from "./modules/users/users.routes";
+import { taskersRoutes } from "./modules/taskers/taskers.routes";
 
 export const buildApp = (opts: FastifyServerOptions = {}): FastifyInstance => {
   const app = fastify(opts);
@@ -24,6 +26,8 @@ export const buildApp = (opts: FastifyServerOptions = {}): FastifyInstance => {
   app.register(multipart);
 
   app.register(authRoutes, { prefix: '/api/v1/auth' });
+  app.register(usersRoutes, { prefix: '/api/v1/users' });
+  app.register(taskersRoutes, { prefix: '/api/v1/taskers' });
 
   // Health check route
   app.get('/health', async () => {
