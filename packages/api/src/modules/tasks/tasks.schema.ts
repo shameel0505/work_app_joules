@@ -28,3 +28,15 @@ export const availableTasksSchema = z.object({
   radius_km: z.coerce.number(),
   category_id: z.string().uuid().optional(),
 });
+
+export const placeBidSchema = z.object({
+  amount_fils: z.number().int().positive(),
+  message: z.string().min(1),
+  eta_minutes: z.number().int().positive(),
+});
+
+export const completeTaskSchema = z.object({
+  completion_notes: z.string().min(1),
+  // File uploads are handled multipart, but if passed in body we validate array structure
+  completion_photos: z.array(z.string()).optional() 
+});

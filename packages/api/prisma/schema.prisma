@@ -61,17 +61,18 @@ enum DiscountType {
 }
 
 model User {
-  id            String   @id @default(uuid())
-  email         String   @unique
-  phone         String   @unique
-  role          UserRole @default(CUSTOMER)
-  firstName     String
-  lastName      String
-  password      String?
-  avatarUrl     String?
-  preferredLang String   @default("en")
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                String   @id @default(uuid())
+  email             String   @unique
+  phone             String   @unique
+  role              UserRole @default(CUSTOMER)
+  firstName         String
+  lastName          String
+  password          String?
+  avatarUrl         String?
+  preferredLang     String   @default("en")
+  walletBalanceFils Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   tasker             Tasker?
   tasksAsCustomer    Task[]              @relation("CustomerTasks")
@@ -138,10 +139,15 @@ model Task {
   locationLng         Float
   locationAddress     String
   budgetFils          Int
+  priceFinal          Int?
   photos              String[]
   specialInstructions String?
   isRecurring         Boolean    @default(false)
   scheduledAt         DateTime?
+  startedAt           DateTime?
+  completedAt         DateTime?
+  completionNotes     String?
+  completionPhotos    String[]
   createdAt           DateTime   @default(now())
   updatedAt           DateTime   @updatedAt
 
@@ -164,6 +170,7 @@ model Bid {
   taskerId   String
   amountFils Int
   message    String?
+  etaMinutes Int
   status     BidStatus @default(PENDING)
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
