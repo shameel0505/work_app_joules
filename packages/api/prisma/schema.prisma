@@ -14,11 +14,13 @@ enum UserRole {
 }
 
 enum TaskStatus {
-  OPEN
-  ASSIGNED
+  PENDING
+  ACCEPTED
   IN_PROGRESS
   COMPLETED
   CANCELLED
+  NO_TASKERS_FOUND
+  DISPUTED
 }
 
 enum PaymentStatus {
@@ -71,16 +73,16 @@ model User {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  tasker            Tasker?
-  tasksAsCustomer   Task[]              @relation("CustomerTasks")
-  messagesSent      Message[]           @relation("SentMessages")
-  reviewsGiven      Review[]            @relation("ReviewsGiven")
-  reviewsReceived   Review[]            @relation("ReviewsReceived")
-  payments          Payment[]           @relation("CustomerPayments")
-  notifications     Notification[]
+  tasker             Tasker?
+  tasksAsCustomer    Task[]              @relation("CustomerTasks")
+  messagesSent       Message[]           @relation("SentMessages")
+  reviewsGiven       Review[]            @relation("ReviewsGiven")
+  reviewsReceived    Review[]            @relation("ReviewsReceived")
+  payments           Payment[]           @relation("CustomerPayments")
+  notifications      Notification[]
   walletTransactions WalletTransaction[]
-  savedAddresses    SavedAddress[]
-  refreshTokens     RefreshToken[]
+  savedAddresses     SavedAddress[]
+  refreshTokens      RefreshToken[]
 
   @@index([phone])
 }
@@ -104,47 +106,52 @@ model Tasker {
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
-  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tasksAsTasker       Task[]   @relation("TaskerTasks")
-  bids                Bid[]
+  user          User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tasksAsTasker Task[] @relation("TaskerTasks")
+  bids          Bid[]
 
   @@index([location])
 }
 
 model Category {
-  id          String   @id @default(uuid())
-  name        String   @unique
-  description String?
-  iconUrl     String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            String   @id @default(uuid())
+  nameEn        String   @unique
+  nameAr        String   @unique
+  icon          String
+  basePriceFils Int
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  tasks       Task[]
-
-  @@index([name])
+  tasks Task[]
 }
 
 model Task {
-  id           String     @id @default(uuid())
-  customerId   String
-  taskerId     String?
-  categoryId   String
-  title        String
-  description  String
-  status       TaskStatus @default(OPEN)
-  location     String
-  budgetFils   Int
-  scheduledAt  DateTime?
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  id                  String     @id @default(uuid())
+  customerId          String
+  taskerId            String?
+  categoryId          String
+  title               String
+  description         String
+  status              TaskStatus @default(PENDING)
+  locationLat         Float
+  locationLng         Float
+  locationAddress     String
+  budgetFils          Int
+  photos              String[]
+  specialInstructions String?
+  isRecurring         Boolean    @default(false)
+  scheduledAt         DateTime?
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
 
-  customer     User       @relation("CustomerTasks", fields: [customerId], references: [id])
-  tasker       Tasker?    @relation("TaskerTasks", fields: [taskerId], references: [id])
-  category     Category   @relation(fields: [categoryId], references: [id])
-  bids         Bid[]
-  messages     Message[]
-  reviews      Review[]
-  payments     Payment[]
+  customer User      @relation("CustomerTasks", fields: [customerId], references: [id])
+  tasker   Tasker?   @relation("TaskerTasks", fields: [taskerId], references: [id])
+  category Category  @relation(fields: [categoryId], references: [id])
+  bids     Bid[]
+  messages Message[]
+  reviews  Review[]
+  payments Payment[]
 
   @@index([status])
   @@index([customerId])
@@ -161,8 +168,8 @@ model Bid {
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
 
-  task       Task      @relation(fields: [taskId], references: [id])
-  tasker     Tasker    @relation(fields: [taskerId], references: [id])
+  task   Task   @relation(fields: [taskId], references: [id])
+  tasker Tasker @relation(fields: [taskerId], references: [id])
 
   @@unique([taskId, taskerId])
 }
@@ -176,8 +183,8 @@ model Message {
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
 
-  task      Task        @relation(fields: [taskId], references: [id])
-  sender    User        @relation("SentMessages", fields: [senderId], references: [id])
+  task   Task @relation(fields: [taskId], references: [id])
+  sender User @relation("SentMessages", fields: [senderId], references: [id])
 }
 
 model Review {
@@ -190,9 +197,9 @@ model Review {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  task       Task     @relation(fields: [taskId], references: [id])
-  reviewer   User     @relation("ReviewsGiven", fields: [reviewerId], references: [id])
-  reviewee   User     @relation("ReviewsReceived", fields: [revieweeId], references: [id])
+  task     Task @relation(fields: [taskId], references: [id])
+  reviewer User @relation("ReviewsGiven", fields: [reviewerId], references: [id])
+  reviewee User @relation("ReviewsReceived", fields: [revieweeId], references: [id])
 
   @@unique([taskId, reviewerId])
 }
@@ -207,8 +214,8 @@ model Payment {
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
 
-  task              Task          @relation(fields: [taskId], references: [id])
-  customer          User          @relation("CustomerPayments", fields: [customerId], references: [id])
+  task     Task @relation(fields: [taskId], references: [id])
+  customer User @relation("CustomerPayments", fields: [customerId], references: [id])
 }
 
 model Notification {
@@ -222,7 +229,7 @@ model Notification {
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
 
-  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model WalletTransaction {
@@ -233,7 +240,7 @@ model WalletTransaction {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model PromoCode {
@@ -259,16 +266,16 @@ model SavedAddress {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
-  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model RefreshToken {
-  id         String   @id @default(uuid())
-  userId     String
-  tokenHash  String   @unique
-  expiresAt  DateTime
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id        String   @id @default(uuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

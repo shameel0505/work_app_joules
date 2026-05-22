@@ -7,6 +7,8 @@ import multipart from '@fastify/multipart';
 import { authRoutes } from "./modules/auth/auth.routes";
 import { usersRoutes } from "./modules/users/users.routes";
 import { taskersRoutes } from "./modules/taskers/taskers.routes";
+import { categoriesRoutes } from "./modules/categories/categories.routes";
+import { tasksRoutes } from "./modules/tasks/tasks.routes";
 
 export const buildApp = (opts: FastifyServerOptions = {}): FastifyInstance => {
   const app = fastify(opts);
@@ -28,6 +30,8 @@ export const buildApp = (opts: FastifyServerOptions = {}): FastifyInstance => {
   app.register(authRoutes, { prefix: '/api/v1/auth' });
   app.register(usersRoutes, { prefix: '/api/v1/users' });
   app.register(taskersRoutes, { prefix: '/api/v1/taskers' });
+  app.register(categoriesRoutes, { prefix: '/api/v1/categories' });
+  app.register(tasksRoutes, { prefix: '/api/v1/tasks' });
 
   // Health check route
   app.get('/health', async () => {
