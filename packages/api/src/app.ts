@@ -10,6 +10,9 @@ import { taskersRoutes } from "./modules/taskers/taskers.routes";
 import { categoriesRoutes } from "./modules/categories/categories.routes";
 import { tasksRoutes } from "./modules/tasks/tasks.routes";
 import { messagingRoutes } from "./modules/messaging/messaging.routes";
+import { paymentsRoutes } from "./modules/payments/payments.routes";
+import { promoCodesRoutes } from "./modules/promo-codes/promo-codes.routes";
+import { walletRoutes } from "./modules/wallet/wallet.routes";
 import { initializeSocket } from "./modules/messaging/socket.gateway";
 
 export const buildApp = (opts: FastifyServerOptions = {}): FastifyInstance => {
@@ -35,6 +38,9 @@ export const buildApp = (opts: FastifyServerOptions = {}): FastifyInstance => {
   app.register(categoriesRoutes, { prefix: '/api/v1/categories' });
   app.register(tasksRoutes, { prefix: '/api/v1/tasks' });
   app.register(messagingRoutes, { prefix: '/api/v1' });
+  app.register(paymentsRoutes, { prefix: '/api/v1/payments' });
+  app.register(promoCodesRoutes, { prefix: '/api/v1/promo-codes' });
+  app.register(walletRoutes, { prefix: '/api/v1/wallet' });
 
   // Health check route
   app.get('/health', async () => {

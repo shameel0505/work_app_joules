@@ -13,5 +13,9 @@ export const taskersRoutes: FastifyPluginAsync = async (app: FastifyInstance) =>
       protectedRoutes.post('/me/emirates-id', TaskersController.uploadEmiratesId);
       protectedRoutes.patch('/me/availability', TaskersController.updateAvailability);
       protectedRoutes.patch('/me/location', TaskersController.updateLocation);
+
+      protectedRoutes.get('/me/earnings', TaskersController.getEarnings);
+      protectedRoutes.get('/me/earnings/transactions', TaskersController.getEarningsTransactions);
+      protectedRoutes.post('/me/payout/request', TaskersController.requestPayout);
   });
 };

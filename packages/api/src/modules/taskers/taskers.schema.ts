@@ -15,3 +15,14 @@ export const updateLocationSchema = z.object({
   lat: z.number(),
   lng: z.number(),
 });
+
+export const payoutRequestSchema = z.object({
+  amount_fils: z.number().int().min(10000), // Min AED 100
+  bank_name: z.string().min(1),
+  iban: z.string().min(1)
+});
+
+export const earningsPaginationSchema = z.object({
+  page: z.coerce.number().default(1),
+  limit: z.coerce.number().default(20),
+});

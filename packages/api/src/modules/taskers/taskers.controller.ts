@@ -112,4 +112,41 @@ export class TaskersController {
           return reply.status(500).send({ success: false, error: { code: 'INTERNAL_ERROR', message: 'Could not fetch public profile' } });
       }
   }
+
+  static async getEarnings(request: FastifyRequest, reply: FastifyReply) {
+      try {
+          const userId = request.user!.id;
+          const earnings = await TaskersService.getEarnings(userId);
+          return reply.send({ success: true, data: earnings });
+      } catch (error: any) {
+          if (error.message === 'NOT_FOUND') return reply.status(404).send({ success: false, error: { code: 'NOT_FOUND', message: 'Tasker not found' }});
+          return reply.status(500).send({ success: false, error: { code: 'INTERNAL_ERROR', message: 'Could not fetch earnings' }});
+      }
+  }
+
+  static async getEarningsTransactions(request: FastifyRequest, reply: FastifyReply) {
+      try {
+          const userId = request.user!.id;
+          const query = require('./taskers.schema').earningsPaginationSchema.parse(request.query);
+          const transactions = await TaskersService.getEarningsTransactions(userId, query.page, query.limit);
+          return reply.send({ success: true, data: transactions });
+      } catch (error: any) {
+           if (error.name === 'ZodError') return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: error.errors[0].message }});
+           if (error.message === 'NOT_FOUND') return reply.status(404).send({ success: false, error: { code: 'NOT_FOUND', message: 'Tasker not found' }});
+           return reply.status(500).send({ success: false, error: { code: 'INTERNAL_ERROR', message: 'Could not fetch transactions' }});
+      }
+  }
+
+  static async requestPayout(request: FastifyRequest, reply: FastifyReply) {
+       try {
+           const userId = request.user!.id;
+           const { amount_fils, bank_name, iban } = require('./taskers.schema').payoutRequestSchema.parse(request.body);
+           const result = await TaskersService.requestPayout(userId, amount_fils, bank_name, iban);
+           return reply.send({ success: true, data: result });
+       } catch (error: any) {
+           if (error.name === 'ZodError') return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: error.errors[0].message }});
+           if (error.message === 'INSUFFICIENT_FUNDS') return reply.status(400).send({ success: false, error: { code: 'INSUFFICIENT_FUNDS', message: 'Insufficient wallet balance for payout' }});
+           return reply.status(500).send({ success: false, error: { code: 'INTERNAL_ERROR', message: 'Could not request payout' }});
+       }
+  }
 }

@@ -90,4 +90,98 @@ export class TaskersService {
 
       return tasker;
   }
+
+  static async getEarnings(userId: string) {
+      const now = new Date();
+      
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      
+      const currentDay = now.getDay();
+      const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - currentDay);
+      
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+      // We determine earnings from completed tasks they have done.
+      // (The payment record is associated to the task. The tasker is paid 80%).
+      const tasker = await prisma.tasker.findUnique({ where: { userId }, include: { user: true } });
+      if (!tasker) throw new Error('NOT_FOUND');
+
+      const completedTasks = await prisma.task.findMany({
+           where: { taskerId: tasker.id, status: 'COMPLETED', priceFinal: { not: null } }
+      });
+
+      let todayFils = 0;
+      let weekFils = 0;
+      let monthFils = 0;
+      let allTimeFils = 0;
+
+      for (const task of completedTasks) {
+          const payout = Math.floor(task.priceFinal! * 0.80);
+          allTimeFils += payout;
+
+          if (task.completedAt) {
+              if (task.completedAt >= todayStart) todayFils += payout;
+              if (task.completedAt >= weekStart) weekFils += payout;
+              if (task.completedAt >= monthStart) monthFils += payout;
+          }
+      }
+
+      // Pending logic for active tasks
+      const pendingTasks = await prisma.task.findMany({
+           where: { taskerId: tasker.id, status: 'IN_PROGRESS', priceFinal: { not: null } }
+      });
+      const pendingFils = pendingTasks.reduce((acc, t) => acc + Math.floor(t.priceFinal! * 0.80), 0);
+
+      return {
+          today_fils: todayFils,
+          this_week_fils: weekFils,
+          this_month_fils: monthFils,
+          all_time_fils: allTimeFils,
+          pending_fils: pendingFils,
+          wallet_balance_fils: tasker.user.walletBalanceFils
+      };
+  }
+
+  static async getEarningsTransactions(userId: string, page: number = 1, limit: number = 20) {
+      const tasker = await prisma.tasker.findUnique({ where: { userId }});
+      if (!tasker) throw new Error('NOT_FOUND');
+
+      const skip = (page - 1) * limit;
+
+      return prisma.task.findMany({
+          where: { taskerId: tasker.id, status: 'COMPLETED' },
+          select: { id: true, title: true, priceFinal: true, completedAt: true },
+          skip,
+          take: limit,
+          orderBy: { completedAt: 'desc' }
+      });
+  }
+
+  static async requestPayout(userId: string, amountFils: number, bankName: string, iban: string) {
+      return await prisma.$transaction(async (tx) => {
+          const user = await tx.user.findUnique({ where: { id: userId } });
+          if (!user || user.walletBalanceFils < amountFils) {
+              throw new Error('INSUFFICIENT_FUNDS');
+          }
+
+          // In standard flows, funds are "frozen" or checked on approval. 
+          // Since the simulation delays 5 seconds, we let the job deduct it for transactional safety to prevent races
+          
+          const request = await tx.payoutRequest.create({
+              data: {
+                  userId,
+                  amountFils,
+                  bankName,
+                  iban,
+                  status: 'PENDING'
+              }
+          });
+
+          // Enqueue job for 5s delay
+          const { approvePayoutQueue } = await import('../../shared/jobs/approvePayout.job');
+          await approvePayoutQueue.add('approve', { payoutId: request.id }, { delay: 5000 });
+
+          return request;
+      });
+  }
 }
