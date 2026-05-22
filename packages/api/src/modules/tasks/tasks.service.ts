@@ -1,6 +1,7 @@
 import { PrismaClient, TaskStatus } from '@prisma/client';
 import { StorageService } from '../../shared/services/storage.service';
 import { matchTaskQueue } from '../../shared/jobs/matchTask.job';
+import { emitTaskStatusChanged } from '../messaging/socket.gateway';
 
 const prisma = new PrismaClient();
 const storageService = new StorageService();
@@ -53,6 +54,7 @@ export class TasksService {
         categoryId: task.categoryId
     });
 
+    emitTaskStatusChanged(task.id, 'PENDING', 'Task was created.');
     return task;
   }
 
@@ -122,10 +124,13 @@ export class TasksService {
           console.log(`Notifying tasker ${task.taskerId} about cancellation of task ${task.id}`);
       }
 
-      return prisma.task.update({
+      const updated = await prisma.task.update({
           where: { id },
           data: { status: 'CANCELLED' }
       });
+
+      emitTaskStatusChanged(id, 'CANCELLED', 'Task was cancelled.');
+      return updated;
   }
 
   static async getAvailableTasks(taskerId: string, lat: number, lng: number, radiusKm: number, categoryId?: string) {
@@ -144,7 +149,7 @@ export class TasksService {
       });
 
       // Filter and sort by distance using Haversine
-      function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon2: number) {
+      const getDistanceFromLatLonInKm = function(lat1: number, lon1: number, lat2: number, lon2: number) {
         const R = 6371; 
         const dLat = deg2rad(lat2 - lat1);
         const dLon = deg2rad(lon2 - lon1);
@@ -152,7 +157,7 @@ export class TasksService {
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         return R * c; 
       }
-      function deg2rad(deg: number) { return deg * (Math.PI / 180); }
+      const deg2rad = function(deg: number) { return deg * (Math.PI / 180); }
 
       const mappedTasks = tasks.map(task => {
           const distance = getDistanceFromLatLonInKm(lat, lng, task.locationLat, task.locationLng);
@@ -281,6 +286,8 @@ export class TasksService {
               }
           });
 
+          emitTaskStatusChanged(taskId, 'ACCEPTED', 'Task was accepted.');
+          emitTaskStatusChanged(taskId, 'ACCEPTED', 'Task was accepted.');
           return uTask;
       });
 

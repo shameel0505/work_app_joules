@@ -9,6 +9,8 @@ import { usersRoutes } from "./modules/users/users.routes";
 import { taskersRoutes } from "./modules/taskers/taskers.routes";
 import { categoriesRoutes } from "./modules/categories/categories.routes";
 import { tasksRoutes } from "./modules/tasks/tasks.routes";
+import { messagingRoutes } from "./modules/messaging/messaging.routes";
+import { initializeSocket } from "./modules/messaging/socket.gateway";
 
 export const buildApp = (opts: FastifyServerOptions = {}): FastifyInstance => {
   const app = fastify(opts);
@@ -32,10 +34,15 @@ export const buildApp = (opts: FastifyServerOptions = {}): FastifyInstance => {
   app.register(taskersRoutes, { prefix: '/api/v1/taskers' });
   app.register(categoriesRoutes, { prefix: '/api/v1/categories' });
   app.register(tasksRoutes, { prefix: '/api/v1/tasks' });
+  app.register(messagingRoutes, { prefix: '/api/v1' });
 
   // Health check route
   app.get('/health', async () => {
     return { status: 'ok', timestamp: new Date().toISOString() };
+  });
+
+    app.ready().then(() => {
+    initializeSocket(app);
   });
 
   return app;

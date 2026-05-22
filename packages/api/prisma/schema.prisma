@@ -189,6 +189,7 @@ model Message {
   type      MessageType @default(TEXT)
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
+  readAt    DateTime?
 
   task   Task @relation(fields: [taskId], references: [id])
   sender User @relation("SentMessages", fields: [senderId], references: [id])
